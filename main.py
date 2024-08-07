@@ -1,7 +1,8 @@
-from sympy import mod_inverse, isprime
+from sympy import mod_inverse, isprime, Matrix
 import math
 from math import gcd
 import numpy as np
+from functools import reduce
 
 def gauss_jordan_elimination(matrix):
     """Perform Gauss-Jordan elimination on the matrix mod 2."""
@@ -135,17 +136,80 @@ def construct_xy(beta, x_vals, N):
     
     return X, Y
 
+def rref_mod2(matrix):
+    # Número de linhas e colunas
+    rows, cols = matrix.shape
+    A = matrix.copy()
+
+    # Transformando a matriz em uma forma escalonada reduzida sobre F2
+    lead = 0
+    for r in range(rows):
+        if lead >= cols:
+            return A
+        i = r
+        while A[i, lead] == 0:
+            i += 1
+            if i == rows:
+                i = r
+                lead += 1
+                if lead == cols:
+                    return A
+        A[i], A[r] = A[r].copy(), A[i].copy()
+        lv = A[r, lead]
+        A[r] = (A[r] / lv) % 2
+        for i in range(rows):
+            if i != r:
+                lv = A[i, lead]
+                A[i] = (A[i] - lv * A[r]) % 2
+        lead += 1
+    return A
+
+def find_solutions(matrix):
+    rref = rref_mod2(matrix)
+    rows, cols = rref.shape
+    pivot_cols = []
+    free_vars = []
+
+    # Identificar colunas de pivôs e variáveis livres
+    for j in range(cols):
+        if 1 in rref[:, j]:
+            pivot_cols.append(j)
+        else:
+            free_vars.append(j)
+    
+    solutions = []
+
+    # Para cada variável livre, defina um vetor solução correspondente
+    for var in free_vars:
+        solution = np.zeros(cols, dtype=int)
+        solution[var] = 1
+        for row in range(rows):
+            if rref[row, var] == 1:
+                pivot = pivot_cols[row]
+                solution[pivot] = 1
+        solutions.append(solution)
+    
+    return solutions
+
+def is_integer_sqrt(x):
+    if x < 0:
+        return False
+    root = math.isqrt(x)
+    return root * root == x
+
 caminho_arquivo = 'entrada.txt'
 N = lerEntradaArquivo(caminho_arquivo)
-primeList, B = generate_factor_base(N)
-print(primeList)
+#primeList, B = generate_factor_base(N)
+#print(primeList)
+primeList = [2,3,5,7,11]
+B=11
 
 l = len(primeList)
 print("LIMITE SUPERIOR PARA OS PRIMOS DO CRIVO: ", B)
 print("EXISTEM ", l, " PRIMOS PARA SEREM TESTADOS")
 print("TAMANHO DOS VETORES: ", l+1)
 
-matriz = [[] for x in range(4)]
+matriz = np.zeros((l, l), dtype=int)
 #matriz = np.zeros((l + 2, l + 1))
 print(len(matriz))
 xZero = math.floor(math.sqrt(N))
@@ -166,19 +230,24 @@ print("functX: ", functX)
 functX = abs(functX)
 #factor = functX % N
 #print("fator: ", factor)
-factors = factorize(functX, primeList)
-if factors:
-    vetor = [signal] + factors
-    #vetor = factors
-    #vetor = apply_mod2(vetor)
-    matriz[vectorLine] = vetor
-    #matriz[:, vectorLine] = vetor
-    x_vals.append(xZero)
-    print(f"Fatores de {functX}: {factors}")
-    print(f"Vetor adicionado: {vetor}")
-    vectorLine = vectorLine + 1
+if is_integer_sqrt(functX):
+    square = math.sqrt(functX)
+    factor1 = (xZero) - square
+    factor2 = (xZero) + square
+else:
+    factors = factorize(functX, primeList)
+    if factors:
+        #vetor = [signal] + factors
+        vetor = factors
+        #vetor = apply_mod2(vetor)
+        matriz[vectorLine] = vetor
+        #matriz[:, vectorLine] = vetor
+        x_vals.append(xZero)
+        print(f"Fatores de {functX}: {factors}")
+        print(f"Vetor adicionado: {vetor}")
+        vectorLine = vectorLine + 1
 
-while vectorLine < 4:
+while vectorLine < l:
     #print("VECTORLINE: ", vectorLine)
     t = dist + 1
     distNeg = -1*t
@@ -194,79 +263,82 @@ while vectorLine < 4:
     #print("functX: ", functX)
     #factor = (functX) % N
     #print("fator: ", factor)
-    factors = factorize(functX, primeList)
-    if factors:
-        print("X da vez: ", t + xZero)
-        vetor = [signal] + factors
-        #vetor = factors
-        #vetor = apply_mod2(vetor)
-        x_vals.append(t + xZero)
-        matriz[vectorLine] = vetor
-        #matriz[:, vectorLine] = vetor
-        print(f"Fatores de {functX}: {factors}")
-        print(f"Vetor adicionado: {vetor}")
-        vectorLine = vectorLine + 1
-
-    if vectorLine == l+2:
+    if is_integer_sqrt(functX):
+        square = math.sqrt(functX)
+        factor1 = (t + xZero) - square
+        factor2 = (t + xZero) + square
         break
-
-    #print("VALOR DA VEZ ", tNeg,  " + ", xZero)
-    functX = pow((tNeg + xZero), 2) - N
-    if functX < 0:
-        signal = 1
     else:
-        signal = 0
-    functX = abs(functX)
-    #print("functX: ", functX)
-    #factor = (functX) % N
-    #print("fator: ", factor)
-    factors = factorize(functX, primeList)
-    if factors:
-        print("X da vez: ", t + xZero)
-        vetor = [signal] + factors
-        #vetor = apply_mod2(vetor)
-        x_vals.append(t + xZero)
-        #matriz[:, vectorLine] = vetor
-        matriz[vectorLine] = vetor
-        print(f"Fatores de {functX}: {factors}")
-        print(f"Vetor adicionado: {vetor}")
-        vectorLine = vectorLine + 1
+        factors = factorize(functX, primeList)
+        if factors:
+            print("X da vez: ", t + xZero)
+            #vetor = [signal] + factors
+            vetor = factors
+            #vetor = apply_mod2(vetor)
+            x_vals.append(t + xZero)
+            matriz[vectorLine] = vetor
+            #matriz[:, vectorLine] = vetor
+            print(f"Fatores de {functX}: {factors}")
+            print(f"Vetor adicionado: {vetor}")
+            vectorLine = vectorLine + 1
+
+    # if vectorLine == l:
+    #     break
+
+    # #print("VALOR DA VEZ ", tNeg,  " + ", xZero)
+    # functX = pow((tNeg + xZero), 2) - N
+    # if functX < 0:
+    #     signal = 1
+    # else:
+    #     signal = 0
+    # functX = abs(functX)
+    # #print("functX: ", functX)
+    # #factor = (functX) % N
+    # #print("fator: ", factor)
+    # factors = factorize(functX, primeList)
+    # if factors:
+    #     print("X da vez: ", t + xZero)
+    #     #vetor = [signal] + factors
+    #     vetor = factors
+    #     #vetor = apply_mod2(vetor)
+    #     x_vals.append(t + xZero)
+    #     #matriz[:, vectorLine] = vetor
+    #     matriz[vectorLine] = vetor
+    #     print(f"Fatores de {functX}: {factors}")
+    #     print(f"Vetor adicionado: {vetor}")
+    #     vectorLine = vectorLine + 1
 
     dist = dist + 1
     counterX = counterX + 1
 
-for linha in matriz:
-    print(linha)
+# for linha in matriz:
+#     print(linha)
 
-matrizMod2 = to_mod2(matriz)
-for linha in matrizMod2:
-    print(linha)
+# factor = quadratic_sieve(matriz, N)
+# print(f"Found factor: {factor}")
 
-beta = solve_mod2(matrizMod2)
-print("Beta vector:", beta)
+if factor1 and factor2:
+    print("FATORES TRIVIAIS: ")
+    print(factor1)
+    print(factor2)
+else:
+    matrizMod2 = to_mod2(matriz)
+    matrizMod2 = np.array(matrizMod2)
+    matrizMod2 = matrizMod2.T
+    for linha in matrizMod2:
+        print(linha)
 
-X, Y = construct_xy(beta, x_vals, N)
-print("X:", X)
-print("Y:", Y)
-print("GCD(N, X-Y):", gcd(N, X - Y))
-print("GCD(N, X+Y):", gcd(N, X + Y))
-
-
-# Resolver o sistema de congruências
-#mod2_matriz_np = np.array(matrizMod2, dtype=int)
-# rref_matrix = gauss_jordan_elimination(matrizMod2)
-# print("Matriz na forma escalonada reduzida:")
-# print(rref_matrix)
-# beta = find_solution(rref_matrix)
-# X=1
-# if beta:
-#     print("Solução não trivial encontrada:")
-#     print(beta)
-#     i = 0
-#     # for value in x_vals:
-#     #     X = X*pow(value, beta[i])
-#     #     i += 1
-#     # print("X: ", X)
-
-# else:
-#     print("Nenhuma solução não trivial encontrada.")
+    rref_matrix = gauss_jordan_elimination(matrizMod2)
+    print("Matriz na forma escalonada reduzida:")
+    print(rref_matrix)
+    beta = find_solution(rref_matrix)
+    if beta:
+        print("Solução não trivial encontrada:")
+        print(beta)
+        X, Y = construct_xy(beta, x_vals, N)
+        print("X:", X)
+        print("Y:", Y)
+        print("MDC(N, X-Y):", gcd(N, X - Y))
+        print("MDC(N, X+Y):", gcd(N, X + Y))
+    else:
+        print("Nenhuma solução não trivial encontrada.")
