@@ -90,38 +90,6 @@ def to_mod2(matrix):
     """Convert all elements of the matrix to mod 2."""
     return [[element % 2 for element in row] for row in matrix]
 
-def solve_mod2(matrix):
-    """
-    Given a (l+2) x (l+1) matrix in mod 2, returns the vector beta such that matrix * beta = 0.
-    """
-    matrix = np.array(matrix, dtype=int)
-    rows, cols = matrix.shape
-    
-    # Perform Gaussian elimination in mod 2
-    for i in range(min(rows, cols)):
-        # Find the pivot row
-        if matrix[i, i] == 0:
-            for j in range(i+1, rows):
-                if matrix[j, i] == 1:
-                    matrix[[i, j]] = matrix[[j, i]]
-                    break
-        
-        # Eliminate below
-        for j in range(i+1, rows):
-            if matrix[j, i] == 1:
-                matrix[j] = (matrix[j] + matrix[i]) % 2
-    
-    # Back-substitution to find solution
-    beta = np.zeros(cols, dtype=int)
-    
-    for i in range(min(rows, cols)-1, -1, -1):
-        if matrix[i, i] == 1:
-            beta[i] = matrix[i, -1]
-            for j in range(i+1, cols-1):
-                beta[i] = (beta[i] + matrix[i, j] * beta[j]) % 2
-    
-    return beta.tolist()
-
 def construct_xy(beta, x_vals, N):
     """Construct the solutions X and Y from the beta vector and x values."""
     x_selected = [x_vals[i] for i in range(len(beta)) if beta[i] == 1]
@@ -164,33 +132,6 @@ def rref_mod2(matrix):
         lead += 1
     return A
 
-def find_solutions(matrix):
-    rref = rref_mod2(matrix)
-    rows, cols = rref.shape
-    pivot_cols = []
-    free_vars = []
-
-    # Identificar colunas de pivôs e variáveis livres
-    for j in range(cols):
-        if 1 in rref[:, j]:
-            pivot_cols.append(j)
-        else:
-            free_vars.append(j)
-    
-    solutions = []
-
-    # Para cada variável livre, defina um vetor solução correspondente
-    for var in free_vars:
-        solution = np.zeros(cols, dtype=int)
-        solution[var] = 1
-        for row in range(rows):
-            if rref[row, var] == 1:
-                pivot = pivot_cols[row]
-                solution[pivot] = 1
-        solutions.append(solution)
-    
-    return solutions
-
 def is_integer_sqrt(x):
     if x < 0:
         return False
@@ -199,10 +140,10 @@ def is_integer_sqrt(x):
 
 caminho_arquivo = 'entrada.txt'
 N = lerEntradaArquivo(caminho_arquivo)
-#primeList, B = generate_factor_base(N)
-#print(primeList)
-primeList = [2,3,5,7,11]
-B=11
+primeList, B = generate_factor_base(N)
+print(primeList)
+#primeList = [2,3,5,7,11, 13, 17, 19,23]
+#B=11
 
 l = len(primeList)
 print("LIMITE SUPERIOR PARA OS PRIMOS DO CRIVO: ", B)
@@ -220,6 +161,8 @@ counterX = 0
 vectorLine = 0
 dist = 0
 t = 0
+factor1 = 0
+factor2 = 0
 
 functX = pow((xZero), 2) - N
 if functX < 0:
@@ -227,10 +170,11 @@ if functX < 0:
 else:
     signal = 0
 print("functX: ", functX)
+originFunctX = functX
 functX = abs(functX)
 #factor = functX % N
 #print("fator: ", factor)
-if is_integer_sqrt(functX):
+if is_integer_sqrt(functX) and originFunctX >= 0:
     square = math.sqrt(functX)
     factor1 = (xZero) - square
     factor2 = (xZero) + square
@@ -239,14 +183,13 @@ else:
     if factors:
         #vetor = [signal] + factors
         vetor = factors
-        #vetor = apply_mod2(vetor)
         matriz[vectorLine] = vetor
-        #matriz[:, vectorLine] = vetor
         x_vals.append(xZero)
         print(f"Fatores de {functX}: {factors}")
         print(f"Vetor adicionado: {vetor}")
         vectorLine = vectorLine + 1
 
+tNeg = 0
 while vectorLine < l:
     #print("VECTORLINE: ", vectorLine)
     t = dist + 1
@@ -259,11 +202,12 @@ while vectorLine < l:
         signal = 1
     else:
         signal = 0
+    originFunctX = functX
     functX = abs(functX)
     #print("functX: ", functX)
     #factor = (functX) % N
     #print("fator: ", factor)
-    if is_integer_sqrt(functX):
+    if is_integer_sqrt(functX) and originFunctX >= 0:
         square = math.sqrt(functX)
         factor1 = (t + xZero) - square
         factor2 = (t + xZero) + square
@@ -274,15 +218,14 @@ while vectorLine < l:
             print("X da vez: ", t + xZero)
             #vetor = [signal] + factors
             vetor = factors
-            #vetor = apply_mod2(vetor)
             x_vals.append(t + xZero)
             matriz[vectorLine] = vetor
-            #matriz[:, vectorLine] = vetor
             print(f"Fatores de {functX}: {factors}")
             print(f"Vetor adicionado: {vetor}")
             vectorLine = vectorLine + 1
+            print("VECTORLINE: ",vectorLine)
 
-    # if vectorLine == l:
+    # if vectorLine == l+1:
     #     break
 
     # #print("VALOR DA VEZ ", tNeg,  " + ", xZero)
@@ -291,22 +234,32 @@ while vectorLine < l:
     #     signal = 1
     # else:
     #     signal = 0
+    # originFunctX = functX
     # functX = abs(functX)
     # #print("functX: ", functX)
     # #factor = (functX) % N
     # #print("fator: ", factor)
-    # factors = factorize(functX, primeList)
-    # if factors:
-    #     print("X da vez: ", t + xZero)
-    #     #vetor = [signal] + factors
-    #     vetor = factors
-    #     #vetor = apply_mod2(vetor)
-    #     x_vals.append(t + xZero)
-    #     #matriz[:, vectorLine] = vetor
-    #     matriz[vectorLine] = vetor
-    #     print(f"Fatores de {functX}: {factors}")
-    #     print(f"Vetor adicionado: {vetor}")
-    #     vectorLine = vectorLine + 1
+    # if is_integer_sqrt(functX) and originFunctX >= 0:
+    #     print("FUNCTX: ", functX)
+    #     print("ORIGIN: ", originFunctX)
+    #     square = math.sqrt(functX)
+    #     print("SQUARE: ", square)
+    #     factor1 = (tNeg + xZero) - square
+    #     factor2 = (tNeg + xZero) + square
+    #     break
+    # else:
+    #     factors = factorize(functX, primeList)
+    #     if factors:
+    #         print("X da vez: ", t + xZero)
+    #         vetor = [signal] + factors
+    #         #vetor = factors
+    #         #vetor = apply_mod2(vetor)
+    #         x_vals.append(t + xZero)
+    #         #matriz[:, vectorLine] = vetor
+    #         matriz[vectorLine] = vetor
+    #         print(f"Fatores de {functX}: {factors}")
+    #         print(f"Vetor adicionado: {vetor}")
+    #         vectorLine = vectorLine + 1
 
     dist = dist + 1
     counterX = counterX + 1
