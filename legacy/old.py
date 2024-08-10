@@ -135,6 +135,21 @@ def is_integer_sqrt(x):
     root = math.isqrt(x)
     return root * root == x
 
+def encontrar_vetor_nulo(matriz):
+    # Transforma a matriz em um array NumPy
+    matriz = np.array(matriz, dtype=int)
+
+    # Calcula o núcleo da matriz utilizando a SVD (Singular Value Decomposition)
+    _, _, v = np.linalg.svd(matriz)
+
+    # O vetor nulo é a última linha de V transposta, correspondente ao menor valor singular
+    vetor_nulo = v[-1, :]
+
+    # Como a matriz tem apenas 0s e 1s, o vetor nulo encontrado deve ser binarizado
+    vetor_nulo = np.round(vetor_nulo).astype(int) % 2
+
+    return vetor_nulo
+
 caminho_arquivo = 'entrada.txt'
 N = lerEntradaArquivo(caminho_arquivo)
 primeList, B = generate_factor_base(N)
@@ -143,15 +158,14 @@ print(primeList)
 l = len(primeList)
 print("LIMITE SUPERIOR PARA OS PRIMOS DO CRIVO: ", B)
 print("EXISTEM ", l, " PRIMOS PARA SEREM TESTADOS")
-print("TAMANHO DOS VETORES: ", l+1)
+print("TAMANHO DOS VETORES: ", l)
 
-matriz = np.zeros((l, l), dtype=int)
+matriz = np.zeros((l+1, l), dtype=int)
 #matriz = np.zeros((l + 2, l + 1))
 print(len(matriz))
 xZero = math.floor(math.sqrt(N))
 print(xZero)
 x_vals = []
-functX_vals = [] 
 counterX = 0
 vectorLine = 0
 dist = 0
@@ -167,7 +181,6 @@ else:
 print("functX: ", functX)
 originFunctX = functX
 functX = abs(functX)
-#factor = functX % N
 
 if is_integer_sqrt(functX) and originFunctX >= 0:
     square = math.sqrt(functX)
@@ -185,7 +198,7 @@ else:
         vectorLine = vectorLine + 1
 
 tNeg = 0
-while vectorLine < l:
+while vectorLine < l+1:
     #print("VECTORLINE: ", vectorLine)
     t = dist + 1
     distNeg = -1*t
@@ -266,16 +279,27 @@ if factor1 and factor2:
     print(factor1)
     print(factor2)
 else:
+    for linha in matriz:
+        print(linha)
     matrizMod2 = to_mod2(matriz)
     matrizMod2 = np.array(matrizMod2)
-    matrizMod2 = matrizMod2.T
+    #matrizMod2 = matrizMod2.T
     for linha in matrizMod2:
         print(linha)
 
-    rref_matrix = gauss_jordan_elimination(matrizMod2)
-    print("Matriz na forma escalonada reduzida:")
-    print(rref_matrix)
-    beta = find_solution(rref_matrix)
+    beta = encontrar_vetor_nulo(matriz)
+    print("Vetor beta:", beta)
+
+    # rref_matrix = gauss_jordan_elimination(matrizMod2)
+    # print("Matriz na forma escalonada reduzida:")
+    # print(rref_matrix)
+    # beta = find_solution(rref_matrix)
+    breaker = 0
+    for i in beta:
+        if i == 1:
+            breaker = 1
+            break
+        else: continue
     if beta:
         print("Solução não trivial encontrada:")
         print(beta)
