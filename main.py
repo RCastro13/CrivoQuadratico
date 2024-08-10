@@ -5,30 +5,28 @@ import numpy as np
 from functools import reduce
 
 def gauss_jordan_elimination(matrix):
-    """Perform Gauss-Jordan elimination on the matrix mod 2."""
+    #faz a eliminacao de gauss-jordan em uma matriz mod 2
     m = np.array(matrix, dtype=int)
     rows, cols = m.shape
     
     for i in range(rows):
-        # Make sure the pivot is 1
         if m[i, i] == 0:
             for j in range(i + 1, rows):
                 if m[j, i] == 1:
                     m[[i, j]] = m[[j, i]]
                     break
-        # Eliminate column entries above and below the pivot
         for j in range(rows):
             if j != i and m[j, i] == 1:
                 m[j] = (m[j] + m[i]) % 2
     return m
 
 def find_solution(matrix):
-    """Find a non-trivial solution to the homogeneous system mod 2."""
+    #encontra solucao nao trivial para o sistema homogeneo mod 2
     m = np.array(matrix, dtype=int)
     rows, cols = m.shape
     pivot_columns = []
     
-    # Find the pivot columns
+    #encontra o pivô
     for i in range(rows):
         for j in range(cols):
             if m[i, j] == 1:
@@ -38,9 +36,9 @@ def find_solution(matrix):
     free_vars = [j for j in range(cols) if j not in pivot_columns]
     
     if not free_vars:
-        return None  # No free variables, no non-trivial solution
+        return None  #nenhuma variavel livre implica em nenhuma solucao nao trivial
     
-    # Construct solution vector
+    #contrói o vetor de solucao
     solution = [0] * cols
     for free_var in free_vars:
         solution[free_var] = 1
@@ -63,14 +61,14 @@ def factorize(n, factor_base):
             abs_n //= p
             exponents[i] += 1
     
-    # If n is not B-smooth, return None
+    #se n nao é B-smooth, retorna None
     if abs_n != 1:
         return None
     
     return exponents
 
 def generate_factor_base(N):
-    """Generate the factor base up to the bound B using SymPy."""
+    #gera a base de fatores até o limite B usando o SymPy
     B = math.exp(0.5 * math.sqrt(math.log(N) * math.log(math.log(N))))
     B = int(B)
     
@@ -87,11 +85,11 @@ def lerEntradaArquivo(caminho_arquivo):
     return numero
 
 def to_mod2(matrix):
-    """Convert all elements of the matrix to mod 2."""
+    #converte todos os elementos da matriz para mod 2
     return [[element % 2 for element in row] for row in matrix]
 
 def construct_xy(beta, x_vals, N):
-    """Construct the solutions X and Y from the beta vector and x values."""
+    #controi as solucoes X e Y para o vetor beta e X_values
     x_selected = [x_vals[i] for i in range(len(beta)) if beta[i] == 1]
     X = 1
     Y = 1
@@ -105,11 +103,10 @@ def construct_xy(beta, x_vals, N):
     return X, Y
 
 def rref_mod2(matrix):
-    # Número de linhas e colunas
     rows, cols = matrix.shape
     A = matrix.copy()
 
-    # Transformando a matriz em uma forma escalonada reduzida sobre F2
+    #transformando a matriz em uma forma escalonada reduzida sobre F2
     lead = 0
     for r in range(rows):
         if lead >= cols:
@@ -142,8 +139,6 @@ caminho_arquivo = 'entrada.txt'
 N = lerEntradaArquivo(caminho_arquivo)
 primeList, B = generate_factor_base(N)
 print(primeList)
-#primeList = [2,3,5,7,11, 13, 17, 19,23]
-#B=11
 
 l = len(primeList)
 print("LIMITE SUPERIOR PARA OS PRIMOS DO CRIVO: ", B)
@@ -173,7 +168,7 @@ print("functX: ", functX)
 originFunctX = functX
 functX = abs(functX)
 #factor = functX % N
-#print("fator: ", factor)
+
 if is_integer_sqrt(functX) and originFunctX >= 0:
     square = math.sqrt(functX)
     factor1 = (xZero) - square
@@ -263,10 +258,6 @@ while vectorLine < l:
 
     dist = dist + 1
     counterX = counterX + 1
-
-# for linha in matriz:
-#     print(linha)
-
 # factor = quadratic_sieve(matriz, N)
 # print(f"Found factor: {factor}")
 
