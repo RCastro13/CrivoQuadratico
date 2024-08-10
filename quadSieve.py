@@ -1,11 +1,10 @@
 from sympy import isprime
 import math
 from math import isqrt, sqrt
-import numpy as np
 from shanks import STonelli
 from itertools import chain
 
-def gcd(a,b): # Euclid's algorithm
+def gcd(a,b):
     if b == 0:
         return a
     elif a >= b:
@@ -38,10 +37,6 @@ def prime_gen(n): # sieve of Eratosthenes, generates primes up to a bound n
             primes.append(nums[i])
             
     return primes
-
-
-# def quad_residue(a, p): #quad_residue symbol of (a/p)
-#     return pow(a, (p - 1) // 2, p)
 
 def quad_residue(a,n):
     #checks if a is quad residue of n
@@ -91,22 +86,17 @@ def solve(solution_vec,smooth_nums,xlist,N):
     a = isqrt(Asquare)
     
     factor = gcd(b-a,N)
-    return factor
+    return factor, b, a
 
 def gauss_elim(M):
 #reduced form of gaussian elimination, finds rref and reads off the nullspace
-#https://www.cs.umd.edu/~gasarch/TOPICS/factoring/fastgauss.pdf
     
-    #M = optimize(M)
     marks = [False]*len(M[0])
-    
     for i in range(len(M)): #do for all rows
         row = M[i]
-        #print(row)
         
         for num in row: #search for pivot
             if num == 1:
-                #print("found pivot at column " + str(row.index(num)+1))
                 j = row.index(num) # column index
                 marks[j] = True
                 
@@ -125,8 +115,8 @@ def gauss_elim(M):
             sol_rows.append(free_row)
     
     if not sol_rows:
-        return("No solution found. Need more smooth numbers.")
-    print("Found {} potential solutions".format(len(sol_rows)))
+        return("Nenhuma solução encontrada. É preciso de mais número smooth.")
+    print("Foram encontradas {} soluções potenciais".format(len(sol_rows)))
     return sol_rows,marks,M
 
 def solve_row(sol_rows,M,marks,K=0):
@@ -175,20 +165,18 @@ def build_matrix(smooth_nums,factor_base):
     for n in smooth_nums:
         exp_vector = [0]*(len(factor_base))
         n_factors = factor(n,factor_base)
-        #print(n,n_factors)
+
         for i in range(len(factor_base)):
             if factor_base[i] in n_factors:
                 exp_vector[i] = (exp_vector[i] + n_factors.count(factor_base[i])) % 2
 
-        #print(n_factors, exp_vector)
         if 1 not in exp_vector: #search for squares
             return True, n
         else:
             pass
         
         M.append(exp_vector)  
-    #print("Matrix built:")
-    #mprint(M)
+
     return(False, transpose(M))
 
 def find_smooth(factor_base,N,I):
@@ -209,7 +197,7 @@ def find_smooth(factor_base,N,I):
         for j in range(i,len(sieve_list),2): # found the 1st even term, now every other term will also be even
             while sieve_list[j] % 2 == 0: #account for powers of 2
                 sieve_list[j] //= 2
-    #print("")
+
     for p in factor_base[1:]: #not including 2
         residues = STonelli(N,p) #finds x such that x^2 = n (mod p). There are two start solutions
         
@@ -243,61 +231,106 @@ def generate_factor_base(N):
     
     return factor_base, B
 
+def generate_factor_base_with_B(N, B):
+    #gera a base de fatores até o limite B usando o SymPy
+    
+    factor_base = []
+    for p in range(2, B + 1):
+        if isprime(p) and pow(N, (p - 1) // 2, p) == 1:
+            factor_base.append(p)
+    
+    return factor_base, B
+
 def lerEntradaArquivo(caminho_arquivo):
     with open(caminho_arquivo, 'r') as file:
         numero = int(file.readline().strip())
     return numero
 
+def quadraticSieve(crivoIntervalMultiplicator, primeList):
+    while(crivoIntervalMultiplicator <= 1000000):
+        print("Testando com o intervalo de crivo =", 10*crivoIntervalMultiplicator)
+        
+        #encontrando os números B-smooth usando o método de sieve
+        smooth_nums, xlist, indices = find_smooth(primeList, N,10*crivoIntervalMultiplicator)
+        crivoIntervalMultiplicator = crivoIntervalMultiplicator * 10
+        print("Foram encontrados {} números B-smooth.".format(len(smooth_nums)))
+        print(smooth_nums)
+
+        if len(smooth_nums) < len(primeList):
+            print("Não foram encontrados números smooth suficientes..")
+            continue
+
+        #montagem da matriz de expoentes
+        is_square, t_matrix = build_matrix(smooth_nums,primeList)
+        #print(t_matrix)
+
+        #caso já tenha um quadrado imediato
+        if is_square == True:
+            x = smooth_nums.index(t_matrix)
+            factor = gcd(xlist[x]+sqrt(t_matrix),N)
+            print("X =", xlist[x])
+            print("Y =", sqrt(t_matrix))
+            print("Fator 1:", factor)
+            print("Fator 2:", int(N/factor))
+            return True
+
+        #caso não, resolvo sol*matrix = 0 e testo todas as possíveis respostas
+        else:
+            sol_rows,marks,M = gauss_elim(t_matrix)
+            solution_vec = solve_row(sol_rows,M,marks,0)
+            factor, b, a = solve(solution_vec,smooth_nums,xlist,N)
+
+            #testo para todos os vetores solução até achar um que me dá a fatoração não trivial
+            for K in range(1,len(sol_rows)):
+                if (factor == 1 or factor == N):
+                    solution_vec = solve_row(sol_rows,M,marks,K)
+                    factor, b, a = solve(solution_vec,smooth_nums,xlist,N)
+                else:
+                    print("X =", b)
+                    print("Y =", a)
+                    print("Fator 1:", factor)
+                    print("Fator 2:", int(N/factor))
+                    return True
+
+        print("Não foi possível encontrar fatores não triviais!")
+    
+    return False
+
+
+#leitura da entrada
 caminho_arquivo = 'entrada.txt'
 n = lerEntradaArquivo(caminho_arquivo)
+
+#verificando se a entrada é primo
+isPrime = isprime(n)
+if isPrime:
+    print("O número de entrada é primo!")
+    print("Fator1: 1")
+    print("Fator2:", n)
+    exit(0)
+
+#gerando B e a lista de primos heuristicamente
 primeList, B = generate_factor_base(n)
-print(B)
-print(primeList)
+print("Testando o B heurístico igual a ", B)
+print("Lista de Primos gerada: ", primeList)
 
 global N
 global root
 global T #tolerance factor
 N,root,K,T = n,int(sqrt(n)),0,1
+crivoIntervalMultiplicator = 10
 
-# B=50
-# primeList = find_base(n,B) #generates a B-smooth factor base
-# print(B)
-# print(primeList)
+resp = quadraticSieve(crivoIntervalMultiplicator, primeList)
+if resp == 0:
+    print("Como o B heurístico falhou, digite um novo valor de B para ser aplicado: ")
+    B = int(input())
 
-smooth_nums,xlist,indices = find_smooth(primeList, N,10000)
-
-print("Encontrei {} números B-smooth.".format(len(smooth_nums)))
-print(smooth_nums)
-
-if len(smooth_nums) < len(primeList):
-    exit("Not enough smooth numbers. Increase the sieve interval or size of the factor base.")
-
-is_square, t_matrix = build_matrix(smooth_nums,primeList)
-print(t_matrix)
-
-if is_square == True:
-    x = smooth_nums.index(t_matrix)
-    factor = gcd(xlist[x]+sqrt(t_matrix),N)
-    print("Found a square!")
-    print("Fator1: ",factor, "Fator2: ", N/factor)
-    exit(0)
-
-else:
-    print("Performing Gaussian Elimination...")
-    sol_rows,marks,M = gauss_elim(t_matrix) #solves the matrix for the null space, finds perfect square
-    solution_vec = solve_row(sol_rows,M,marks,0)
-    print(solution_vec)
-
-    factor = solve(solution_vec,smooth_nums,xlist,N) #solves the congruence of squares to obtain factors
-
-    for K in range(1,len(sol_rows)):
-        if (factor == 1 or factor == N):
-            print("Didn't work. Trying different solution vector...")
-            solution_vec = solve_row(sol_rows,M,marks,K)
-            factor = solve(solution_vec,smooth_nums,xlist,N)
-        else:
-            print("Found factors!")
-            print("Fator1: ",factor, "Fator2: ", N/factor)
-            exit(0)
-
-print("Didn't find any nontrivial factors!")
+while resp == 0:
+    primeList, B = generate_factor_base_with_B(n, B)
+    print("Testando o B igual a ", B)
+    print("Lista de Primos gerada: ", primeList)
+    crivoIntervalMultiplicator = 10
+    resp = quadraticSieve(crivoIntervalMultiplicator, primeList)
+    if resp: break
+    print("Como o B digitado falhou, digite um novo valor de B para ser aplicado: ")
+    B = int(input())
