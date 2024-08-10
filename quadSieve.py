@@ -1,7 +1,6 @@
 from sympy import isprime
-import math
-from math import isqrt, sqrt
-from shanks import STonelli
+from math import isqrt, sqrt, log, exp
+#from shanks import STonelli
 from itertools import chain
 
 def gcd(a,b):
@@ -11,32 +10,7 @@ def gcd(a,b):
         return gcd(b,a % b)
     else:
         return gcd(b,a)
-
-def prime_gen(n): # sieve of Eratosthenes, generates primes up to a bound n
-    if n < 2:
-        return []
     
-    nums = []
-    isPrime = []
-    
-    for i in range(0, n+1):#Creates list of numbers from 0 to n
-        nums.append(i)
-        isPrime.append(True)
-        
-    isPrime[0]=False
-    isPrime[1]=False
-    
-    for j in range(2,int(n/2)):#tries all size gaps that make sense
-        if isPrime[j] == True:
-            for i in range(2*j,n+1,j):#starts from j+j, jumps by gap size j and crosses out that number
-                isPrime[i] = False
-                
-    primes = []
-    for i in range(0, n+1):#Adds leftovers
-        if isPrime[i] == True:
-            primes.append(nums[i])
-            
-    return primes
 
 def quad_residue(a,n):
     #checks if a is quad residue of n
@@ -58,17 +32,61 @@ def quad_residue(a,n):
 
     return z
 
-def find_base(N,B):
-# generates a B-smooth factor base
+# Returns k such that b^k = 1 (mod p)
+def order(p,q):
+	if gcd(p,q) !=1:
+		#print(p,' and ',q,'are not co-prime')
+		return -1
+	k=3
+	while True:
+		if pow(q,k,p)==1:
+			return k
+		k+=1
 
-    factor_base = []
-    primes = prime_gen(B)
-    #print(primes)
+# function return p - 1 (= x argument) as x * 2^e,
+# where x will be odd sending e as reference because
+# updation is needed in actual e
+def convertx2e(x):
+	e=0
+	while x%2==0:
+		x/=2
+		e+=1
+	return int(x),e
+
+# Main function for finding the modular square root
+def STonelli(n, p): #tonelli-shanks to solve modular square root, x^2 = N (mod p)
+    assert quad_residue(n, p) == 1, "not a square (mod p)"
+    q = p - 1
+    s = 0
     
-    for p in primes: # such that N is a quadratic residue mod p
-        if quad_residue(N,p) == 1:
-            factor_base.append(p)
-    return factor_base
+    while q % 2 == 0:
+        q //= 2
+        s += 1
+    if s == 1:
+        r = pow(n, (p + 1) // 4, p)
+        return r,p-r
+    for z in range(2, p):
+        #print(quad_residue(z, p))
+        if p - 1 == quad_residue(z, p):
+            break
+    c = pow(z, q, p)
+    r = pow(n, (q + 1) // 2, p)
+    t = pow(n, q, p)
+    m = s
+    t2 = 0
+    while (t - 1) % p != 0:
+        t2 = (t * t) % p
+        for i in range(1, m):
+            if (t2 - 1) % p == 0:
+                break
+            t2 = (t2 * t2) % p
+        b = pow(c, 1 << (m - i - 1), p)
+        r = (r * b) % p
+        c = (b * b) % p
+        t = (t * c) % p
+        m = i
+
+    return (r,p-r)
 
 def solve(solution_vec,smooth_nums,xlist,N):
     
@@ -222,7 +240,7 @@ def find_smooth(factor_base,N,I):
 
 def generate_factor_base(N):
     #gera a base de fatores até o limite B usando o SymPy
-    B = math.exp(0.5 * math.sqrt(math.log(N) * math.log(math.log(N))))
+    B = exp(0.5 * sqrt(log(N) * log(log(N))))
     B = int(B)
     
     factor_base = []
