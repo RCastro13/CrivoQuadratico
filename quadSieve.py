@@ -115,8 +115,9 @@ def gauss_elim(M):
             sol_rows.append(free_row)
     
     if not sol_rows:
-        return("Nenhuma solução encontrada. É preciso de mais número smooth.")
-    print("Foram encontradas {} soluções potenciais".format(len(sol_rows)))
+        #return("Nenhuma solução encontrada. É preciso de mais número smooth.")
+        return
+    #print("Foram encontradas {} soluções potenciais".format(len(sol_rows)))
     return sol_rows,marks,M
 
 def solve_row(sol_rows,M,marks,K=0):
@@ -248,16 +249,16 @@ def lerEntradaArquivo(caminho_arquivo):
 
 def quadraticSieve(crivoIntervalMultiplicator, primeList):
     while(crivoIntervalMultiplicator <= 1000000):
-        print("Testando com o intervalo de crivo =", 10*crivoIntervalMultiplicator)
+        #print("Testando com o intervalo de crivo =", 10*crivoIntervalMultiplicator)
         
         #encontrando os números B-smooth usando o método de sieve
         smooth_nums, xlist, indices = find_smooth(primeList, N,10*crivoIntervalMultiplicator)
         crivoIntervalMultiplicator = crivoIntervalMultiplicator * 10
-        print("Foram encontrados {} números B-smooth.".format(len(smooth_nums)))
-        print(smooth_nums)
+        #print("Foram encontrados {} números B-smooth.".format(len(smooth_nums)))
+        #print(smooth_nums)
 
         if len(smooth_nums) < len(primeList):
-            print("Não foram encontrados números smooth suficientes..")
+            #print("Não foram encontrados números smooth suficientes..")
             continue
 
         #montagem da matriz de expoentes
@@ -311,8 +312,11 @@ if isPrime:
 
 #gerando B e a lista de primos heuristicamente
 primeList, B = generate_factor_base(n)
-print("Testando o B heurístico igual a ", B)
-print("Lista de Primos gerada: ", primeList)
+#print("Testando o B heurístico igual a ", B)
+#print("Lista de Primos gerada: ", primeList)
+print("Limite Superior para os primos usados no crivo: ", B)
+print("A quantidade de primos que podem aparecer na fatoração após aplicação da heurística é: ", len(primeList))
+print("O tamanho dos vetores incluídos na matriz é: ", len(primeList)+1)
 
 global N
 global root
@@ -327,8 +331,11 @@ if resp == 0:
 
 while resp == 0:
     primeList, B = generate_factor_base_with_B(n, B)
-    print("Testando o B igual a ", B)
-    print("Lista de Primos gerada: ", primeList)
+    #print("Testando o B igual a ", B)
+    #print("Lista de Primos gerada: ", primeList)
+    print("Limite Superior para os primos usados no crivo: ", B)
+    print("A quantidade de primos que podem aparecer na fatoração após aplicação da heurística é: ", len(primeList))
+    print("O tamanho dos vetores incluídos na matriz é: ", len(primeList)+1)
     crivoIntervalMultiplicator = 10
     resp = quadraticSieve(crivoIntervalMultiplicator, primeList)
     if resp: break
