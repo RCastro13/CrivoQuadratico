@@ -1,8 +1,8 @@
 from sympy import isprime
 from math import isqrt, sqrt, log, exp
-#from shanks import STonelli
 from itertools import chain
 
+#função para cálculo de mdc(a,b)
 def gcd(a,b):
     if b == 0:
         return a
@@ -10,52 +10,48 @@ def gcd(a,b):
         return gcd(b,a % b)
     else:
         return gcd(b,a)
-    
 
+#função para verificar se 'a' é um resíduo quadrado de n
 def quad_residue(a,n):
-    #checks if a is quad residue of n
-    l=1
-    q=(n-1)//2
+    l = 1
+    q = (n-1)//2
     x = q**l
-    if x==0:
+    if x == 0:
         return 1
         
-    a =a%n
-    z=1
-    while x!= 0:
-        if x%2==0:
-            a=(a **2) % n
-            x//= 2
+    a = a % n
+    z = 1
+    while x != 0:
+        if x % 2 == 0:
+            a = (a**2) % n
+            x //= 2
         else:
-            x-=1
-            z=(z*a) % n
+            x -= 1
+            z = (z*a) % n
 
     return z
 
-# Returns k such that b^k = 1 (mod p)
-def order(p,q):
-	if gcd(p,q) !=1:
-		#print(p,' and ',q,'are not co-prime')
+#função que retorna k tal que b^k = 1 mod p
+def order(p, q):
+	if gcd(p, q) != 1:
 		return -1
-	k=3
+	k = 3
 	while True:
-		if pow(q,k,p)==1:
+		if pow(q, k, p) == 1:
 			return k
-		k+=1
+		k += 1
 
-# function return p - 1 (= x argument) as x * 2^e,
-# where x will be odd sending e as reference because
-# updation is needed in actual e
+#função que p-1 (= x de parâmetro) tal que x*2^e onde x é par 
 def convertx2e(x):
-	e=0
-	while x%2==0:
-		x/=2
-		e+=1
-	return int(x),e
+	e = 0
+	while x % 2 == 0:
+		x /= 2
+		e += 1
+	return int(x), e
 
-# Main function for finding the modular square root
-def STonelli(n, p): #tonelli-shanks to solve modular square root, x^2 = N (mod p)
-    assert quad_residue(n, p) == 1, "not a square (mod p)"
+#função principal que aplica o algoritmo de tonelli-shanks para resolver x^2 = N mod p
+def tonelliShanks(n, p):
+    assert quad_residue(n, p) == 1, "não é um quadrado (mod p)"
     q = p - 1
     s = 0
     
@@ -66,7 +62,6 @@ def STonelli(n, p): #tonelli-shanks to solve modular square root, x^2 = N (mod p
         r = pow(n, (p + 1) // 4, p)
         return r,p-r
     for z in range(2, p):
-        #print(quad_residue(z, p))
         if p - 1 == quad_residue(z, p):
             break
     c = pow(z, q, p)
@@ -88,8 +83,8 @@ def STonelli(n, p): #tonelli-shanks to solve modular square root, x^2 = N (mod p
 
     return (r,p-r)
 
+#função que dado um vetor solução, calcula X e Y e retorna ambos e um dos fatores de N
 def solve(solution_vec,smooth_nums,xlist,N):
-    
     solution_nums = [smooth_nums[i] for i in solution_vec]
     x_nums = [xlist[i] for i in solution_vec]
     
@@ -97,14 +92,14 @@ def solve(solution_vec,smooth_nums,xlist,N):
     for n in solution_nums:
         Asquare *= n
         
-    b = 1
+    x = 1
     for n in x_nums:
-        b *= n
+        x *= n
 
-    a = isqrt(Asquare)
+    y = isqrt(Asquare)
     
-    factor = gcd(b-a,N)
-    return factor, b, a
+    factor = gcd(x-y,N)
+    return factor, x, y
 
 def gauss_elim(M):
 #reduced form of gaussian elimination, finds rref and reads off the nullspace
@@ -198,16 +193,16 @@ def build_matrix(smooth_nums,factor_base):
 
     return(False, transpose(M))
 
-def find_smooth(factor_base,N,I):
+def find_smooth(factor_base, N, I, T, xZero):
 # tries to find B-smooth numbers in sieve_seq, using sieving
 
-    def sieve_prep(N,sieve_int):
+    def sieve_prep(N,sieve_int, xZero):
     # generates a sequence from Y(x) = x^2 - N, starting at x = root 
-        sieve_seq = [x**2 - N for x in range(root,root+sieve_int)]
-        #sieve_seq_neg = [x**2 - N for x in range(root,root-sieve_int,-1)]
+        sieve_seq = [x**2 - N for x in range(xZero,xZero+sieve_int)]
+        #sieve_seq_neg = [x**2 - N for x in range(xZero,xZero-sieve_int,-1)]
         return sieve_seq
 
-    sieve_seq = sieve_prep(N,I)
+    sieve_seq = sieve_prep(N, I, xZero)
     sieve_list = sieve_seq.copy() # keep a copy of sieve_seq for later
     if factor_base[0] == 2:
         i = 0
@@ -218,10 +213,10 @@ def find_smooth(factor_base,N,I):
                 sieve_list[j] //= 2
 
     for p in factor_base[1:]: #not including 2
-        residues = STonelli(N,p) #finds x such that x^2 = n (mod p). There are two start solutions
+        residues = tonelliShanks(N,p) #finds x such that x^2 = n (mod p). There are two start solutions
         
         for r in residues:
-            for i in range((r-root) % p, len(sieve_list), p): # Now every pth term will also be divisible
+            for i in range((r-xZero) % p, len(sieve_list), p): # Now every pth term will also be divisible
                 while sieve_list[i] % p == 0: #account for prime powers
                     sieve_list[i] //= p
     xlist = [] #original x terms
@@ -229,17 +224,17 @@ def find_smooth(factor_base,N,I):
     indices = [] # index of discovery
     
     for i in range(len(sieve_list)):
-        if len(smooth_nums) >= len(factor_base)+T: #probability of no solutions is 2^-T
+        if len(smooth_nums) >= len(factor_base) + T: #probability of no solutions is 2^-T
             break
         if sieve_list[i] == 1: # found B-smooth number
             smooth_nums.append(sieve_seq[i])
-            xlist.append(i+root)
+            xlist.append(i+xZero)
             indices.append(i)
 
     return(smooth_nums,xlist,indices)
 
-def generate_factor_base(N):
-    #gera a base de fatores até o limite B usando o SymPy
+#função para gerar o B heurístico e os fatores primos com base nesse
+def generateFactorBase(N):
     B = exp(0.5 * sqrt(log(N) * log(log(N))))
     B = int(B)
     
@@ -250,9 +245,8 @@ def generate_factor_base(N):
     
     return factor_base, B
 
-def generate_factor_base_with_B(N, B):
-    #gera a base de fatores até o limite B usando o SymPy
-    
+#função que recebe um valor de B e gera os fatores primos com base nele
+def generateFactorBaseWithB(N, B):
     factor_base = []
     for p in range(2, B + 1):
         if isprime(p) and pow(N, (p - 1) // 2, p) == 1:
@@ -260,28 +254,25 @@ def generate_factor_base_with_B(N, B):
     
     return factor_base, B
 
+#função para leitura do arquivo de entrada
 def lerEntradaArquivo(caminho_arquivo):
     with open(caminho_arquivo, 'r') as file:
         numero = int(file.readline().strip())
     return numero
 
-def quadraticSieve(crivoIntervalMultiplicator, primeList):
+#função principal para cálculo do crivo quadrático
+def quadraticSieve(crivoIntervalMultiplicator, primeList, T, xZero):
     while(crivoIntervalMultiplicator <= 1000000):
-        #print("Testando com o intervalo de crivo =", 10*crivoIntervalMultiplicator)
-        
         #encontrando os números B-smooth usando o método de sieve
-        smooth_nums, xlist, indices = find_smooth(primeList, N,10*crivoIntervalMultiplicator)
+        smooth_nums, xlist, indices = find_smooth(primeList, N, 10*crivoIntervalMultiplicator, T, xZero)
         crivoIntervalMultiplicator = crivoIntervalMultiplicator * 10
-        #print("Foram encontrados {} números B-smooth.".format(len(smooth_nums)))
-        #print(smooth_nums)
 
+        #Verifica se foram encontrados números smooth suficientes
         if len(smooth_nums) < len(primeList):
-            #print("Não foram encontrados números smooth suficientes..")
             continue
 
         #montagem da matriz de expoentes
         is_square, t_matrix = build_matrix(smooth_nums,primeList)
-        #print(t_matrix)
 
         #caso já tenha um quadrado imediato
         if is_square == True:
@@ -295,18 +286,18 @@ def quadraticSieve(crivoIntervalMultiplicator, primeList):
 
         #caso não, resolvo sol*matrix = 0 e testo todas as possíveis respostas
         else:
-            sol_rows,marks,M = gauss_elim(t_matrix)
+            sol_rows, marks, M = gauss_elim(t_matrix)
             solution_vec = solve_row(sol_rows,M,marks,0)
-            factor, b, a = solve(solution_vec,smooth_nums,xlist,N)
+            factor, x, y = solve(solution_vec,smooth_nums,xlist,N)
 
             #testo para todos os vetores solução até achar um que me dá a fatoração não trivial
-            for K in range(1,len(sol_rows)):
+            for K in range(1, len(sol_rows)):
                 if (factor == 1 or factor == N):
                     solution_vec = solve_row(sol_rows,M,marks,K)
-                    factor, b, a = solve(solution_vec,smooth_nums,xlist,N)
+                    factor, x, y = solve(solution_vec,smooth_nums,xlist,N)
                 else:
-                    print("X =", b)
-                    print("Y =", a)
+                    print("X =", x)
+                    print("Y =", y)
                     print("Fator 1:", factor)
                     print("Fator 2:", int(N/factor))
                     return True
@@ -314,7 +305,6 @@ def quadraticSieve(crivoIntervalMultiplicator, primeList):
         print("Não foi possível encontrar fatores não triviais!")
     
     return False
-
 
 #leitura da entrada
 caminho_arquivo = 'entrada.txt'
@@ -329,33 +319,29 @@ if isPrime:
     exit(0)
 
 #gerando B e a lista de primos heuristicamente
-primeList, B = generate_factor_base(n)
-#print("Testando o B heurístico igual a ", B)
-#print("Lista de Primos gerada: ", primeList)
+primeList, B = generateFactorBase(n)
 print("Limite Superior para os primos usados no crivo: ", B)
 print("A quantidade de primos que podem aparecer na fatoração após aplicação da heurística é: ", len(primeList))
 print("O tamanho dos vetores incluídos na matriz é: ", len(primeList)+1)
 
 global N
-global root
-global T #tolerance factor
-N,root,K,T = n,int(sqrt(n)),0,1
-crivoIntervalMultiplicator = 10
+N = n
+T = 1
+xZero = int(sqrt(n))
+sieveIntervalMultiplicator = 10
 
-resp = quadraticSieve(crivoIntervalMultiplicator, primeList)
+resp = quadraticSieve(sieveIntervalMultiplicator, primeList, T, xZero)
 if resp == 0:
-    print("Como o B heurístico falhou, digite um novo valor de B para ser aplicado: ")
+    print("Não foi possível encontrar fatores com o B heurístico, digite um novo valor de B para ser aplicado: ")
     B = int(input())
 
 while resp == 0:
-    primeList, B = generate_factor_base_with_B(n, B)
-    #print("Testando o B igual a ", B)
-    #print("Lista de Primos gerada: ", primeList)
+    primeList, B = generateFactorBaseWithB(n, B)
     print("Limite Superior para os primos usados no crivo: ", B)
     print("A quantidade de primos que podem aparecer na fatoração após aplicação da heurística é: ", len(primeList))
     print("O tamanho dos vetores incluídos na matriz é: ", len(primeList)+1)
-    crivoIntervalMultiplicator = 10
-    resp = quadraticSieve(crivoIntervalMultiplicator, primeList)
+    sieveIntervalMultiplicator = 10
+    resp = quadraticSieve(sieveIntervalMultiplicator, primeList, T, xZero)
     if resp: break
-    print("Como o B digitado falhou, digite um novo valor de B para ser aplicado: ")
+    print("Não foi possível encontrar fatores com o B digitado, digite um novo valor de B para ser aplicado: ")
     B = int(input())
