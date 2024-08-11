@@ -12,7 +12,7 @@ def gcd(a, b):
         return gcd(b,a)
 
 #função para verificar se 'a' é um resíduo quadrado de n
-def quad_residue(a, n):
+def quadResidue(a, n):
     l = 1
     q = (n-1)//2
     x = q**l
@@ -51,7 +51,7 @@ def convertx2e(x):
 
 #função principal que aplica o algoritmo de tonelli-shanks para resolver x^2 = N mod p
 def tonelliShanks(n, p):
-    assert quad_residue(n, p) == 1, "não é um quadrado (mod p)"
+    assert quadResidue(n, p) == 1, "não é um quadrado (mod p)"
     q = p - 1
     s = 0
     
@@ -62,7 +62,7 @@ def tonelliShanks(n, p):
         r = pow(n, (p + 1) // 4, p)
         return r,p-r
     for z in range(2, p):
-        if p - 1 == quad_residue(z, p):
+        if p - 1 == quadResidue(z, p):
             break
     c = pow(z, q, p)
     r = pow(n, (q + 1) // 2, p)
@@ -99,45 +99,45 @@ def solve(solutionVec, smoothNums, xlist, N):
     return factor, x, y
 
 #função que executa eliminação gaussiana (encontra o espaço nulo a esquerda)
-def gaussElim(M):
-    marks = [False] * len(M[0])  
-    for i in range(len(M)):
-        row = M[i]
+def gaussElim(matrix):
+    marks = [False] * len(matrix[0])  
+    for i in range(len(matrix)):
+        row = matrix[i]
         #procura pelo pivô
         for num in row:
             if num == 1:
                 j = row.index(num)
                 marks[j] = True
                 #procura por outros 1s na mesma coluna
-                for k in chain(range(0, i), range(i+1, len(M))): 
-                    if M[k][j] == 1:
-                        for i in range(len(M[k])):
-                            M[k][i] = (M[k][i] + row[i]) % 2
+                for k in chain(range(0, i), range(i+1, len(matrix))): 
+                    if matrix[k][j] == 1:
+                        for i in range(len(matrix[k])):
+                            matrix[k][i] = (matrix[k][i] + row[i]) % 2
                 break
     
-    M = transpose(M)
+    matrix = transpose(matrix)
     solRows = []
     #encontra colunas livre (são linhas agora)
     for i in range(len(marks)): 
         if marks[i] == False:
-            freeRow = [M[i],i]
+            freeRow = [matrix[i],i]
             solRows.append(freeRow)
     
     if not solRows:
         return(" ")
-    return solRows, marks, M
+    return solRows, marks, matrix
 
 #função que recebe as possíveis soluções e um index e retorna a solução
-def solveRow(solRows, M, marks, K=0):
+def solveRow(solRows, matrix, marks, K=0):
     solutionVec, indices = [], []
     freeRow = solRows[K][0]
     for i in range(len(freeRow)):
         if freeRow[i] == 1: 
             indices.append(i)
     #linhas com 1 na mesma coluna são dependentes
-    for r in range(len(M)):
+    for r in range(len(matrix)):
         for i in indices:
-            if M[r][i] == 1 and marks[r]:
+            if matrix[r][i] == 1 and marks[r]:
                 solutionVec.append(r)
                 break
             
@@ -248,18 +248,12 @@ def generateFactorBaseWithB(N, B):
     
     return factorBase, B
 
-#função para leitura do arquivo de entrada
-def lerEntradaArquivo(caminho_arquivo):
-    with open(caminho_arquivo, 'r') as file:
-        num = int(file.readline().strip())
-    return num
-
 #função principal para cálculo do crivo quadrático
-def quadraticSieve(crivoIntervalMultiplicator, primeList, T, xZero):
-    while(crivoIntervalMultiplicator <= 10000000):
+def quadraticSieve(sieveIntervalMultiplicator, primeList, T, xZero):
+    while(sieveIntervalMultiplicator <= 10000000):
         #encontrando os números B-smooth usando o método de sieve
-        smoothNums, xlist, indexes = findSmooth(primeList, N, crivoIntervalMultiplicator, T, xZero)
-        crivoIntervalMultiplicator = crivoIntervalMultiplicator * 10
+        smoothNums, xlist, indexes = findSmooth(primeList, N, sieveIntervalMultiplicator, T, xZero)
+        sieveIntervalMultiplicator = sieveIntervalMultiplicator * 10
 
         #Verifica se foram encontrados números smooth suficientes
         if len(smoothNums) < len(primeList):
@@ -298,9 +292,15 @@ def quadraticSieve(crivoIntervalMultiplicator, primeList, T, xZero):
                 
     return False
 
+#função para leitura do arquivo de entrada
+def readFile(filePath):
+    with open(filePath, 'r') as file:
+        num = int(file.readline().strip())
+    return num
+
 #leitura da entrada
-caminho_arquivo = 'entrada.txt'
-n = lerEntradaArquivo(caminho_arquivo)
+filePath = 'entrada.txt'
+n = readFile(filePath)
 
 #verificando se a entrada é primo
 isPrime = isprime(n)
