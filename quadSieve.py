@@ -3,7 +3,7 @@ from math import isqrt, sqrt, log, exp
 from itertools import chain
 
 #função para cálculo de mdc(a,b)
-def gcd(a,b):
+def gcd(a, b):
     if b == 0:
         return a
     elif a >= b:
@@ -12,7 +12,7 @@ def gcd(a,b):
         return gcd(b,a)
 
 #função para verificar se 'a' é um resíduo quadrado de n
-def quad_residue(a,n):
+def quad_residue(a, n):
     l = 1
     q = (n-1)//2
     x = q**l
@@ -81,91 +81,86 @@ def tonelliShanks(n, p):
         t = (t * c) % p
         m = i
 
-    return (r,p-r)
+    return (r, p - r)
 
 #função que dado um vetor solução, calcula X e Y e retorna ambos e um dos fatores de N
-def solve(solution_vec,smooth_nums,xlist,N):
-    solution_nums = [smooth_nums[i] for i in solution_vec]
-    x_nums = [xlist[i] for i in solution_vec]
-    
-    Asquare = 1
-    for n in solution_nums:
-        Asquare *= n
+def solve(solutionVec, smoothNums, xlist, N):
+    solutionNums = [smoothNums[i] for i in solutionVec]
+    xNums = [xlist[i] for i in solutionVec]
+    aSquare = 1
+    for num in solutionNums:
+        aSquare *= num
         
     x = 1
-    for n in x_nums:
-        x *= n
-
-    y = isqrt(Asquare)
-    
-    factor = gcd(x-y,N)
+    for num in xNums:
+        x *= num
+    y = isqrt(aSquare)
+    factor = gcd(x - y, N)
     return factor, x, y
 
-def gauss_elim(M):
-#reduced form of gaussian elimination, finds rref and reads off the nullspace
-    
-    marks = [False]*len(M[0])
-    for i in range(len(M)): #do for all rows
+#função que executa eliminação gaussiana (encontra o espaço nulo a esquerda)
+def gaussElim(M):
+    marks = [False] * len(M[0])  
+    for i in range(len(M)):
         row = M[i]
-        
-        for num in row: #search for pivot
+        #procura pelo pivô
+        for num in row:
             if num == 1:
-                j = row.index(num) # column index
+                j = row.index(num)
                 marks[j] = True
-                
-                for k in chain(range(0,i),range(i+1,len(M))): #search for other 1s in the same column
+                #procura por outros 1s na mesma coluna
+                for k in chain(range(0, i), range(i+1, len(M))): 
                     if M[k][j] == 1:
                         for i in range(len(M[k])):
-                            M[k][i] = (M[k][i] + row[i])%2
+                            M[k][i] = (M[k][i] + row[i]) % 2
                 break
     
     M = transpose(M)
-        
-    sol_rows = []
-    for i in range(len(marks)): #find free columns (which have now become rows)
-        if marks[i]== False:
-            free_row = [M[i],i]
-            sol_rows.append(free_row)
+    solRows = []
+    #encontra colunas livre (são linhas agora)
+    for i in range(len(marks)): 
+        if marks[i] == False:
+            freeRow = [M[i],i]
+            solRows.append(freeRow)
     
-    if not sol_rows:
-        #return("Nenhuma solução encontrada. É preciso de mais número smooth.")
-        return
-    #print("Foram encontradas {} soluções potenciais".format(len(sol_rows)))
-    return sol_rows,marks,M
+    if not solRows:
+        return(" ")
+    return solRows, marks, M
 
-def solve_row(sol_rows,M,marks,K=0):
-    solution_vec, indices = [],[]
-    free_row = sol_rows[K][0] # may be multiple K
-    for i in range(len(free_row)):
-        if free_row[i] == 1: 
+#função que recebe as possíveis soluções e um index e retorna a solução
+def solveRow(solRows, M, marks, K=0):
+    solutionVec, indices = [], []
+    freeRow = solRows[K][0]
+    for i in range(len(freeRow)):
+        if freeRow[i] == 1: 
             indices.append(i)
-    for r in range(len(M)): #rows with 1 in the same column will be dependent
+    #linhas com 1 na mesma coluna são dependentes
+    for r in range(len(M)):
         for i in indices:
             if M[r][i] == 1 and marks[r]:
-                solution_vec.append(r)
+                solutionVec.append(r)
                 break
             
-    solution_vec.append(sol_rows[K][1])       
-    return(solution_vec)
+    solutionVec.append(solRows[K][1])       
+    return(solutionVec)
 
+#função que transpõe uma matriz
 def transpose(matrix):
-#transpose matrix so columns become rows, makes list comp easier to work with
-    new_matrix = []
+    TMatrix = []
     for i in range(len(matrix[0])):
-        new_row = []
+        newRow = []
         for row in matrix:
-            new_row.append(row[i])
-        new_matrix.append(new_row)
-    return(new_matrix)
+            newRow.append(row[i])
+        TMatrix.append(newRow)
+    return(TMatrix)
 
-def build_matrix(smooth_nums,factor_base):
-# generates exponent vectors mod 2 from previously obtained smooth numbers, then builds matrix
-
-    def factor(n,factor_base):#trial division from factor base
+#função que constrói a matriz de expoentes dos números B-smooth
+def buildMatrix(smoothNums, factorBase):
+    def factor(n, factorBase):
         factors = []
         if n < 0:
             factors.append(-1)
-        for p in factor_base:
+        for p in factorBase:
             if p == -1:
                 pass
             else:
@@ -175,135 +170,132 @@ def build_matrix(smooth_nums,factor_base):
         return factors
 
     M = []
-    factor_base.insert(0,-1)
-    for n in smooth_nums:
-        exp_vector = [0]*(len(factor_base))
-        n_factors = factor(n,factor_base)
+    factorBase.insert(0, -1)
+    for n in smoothNums:
+        expVector = [0] * (len(factorBase))
+        nFactors = factor(n, factorBase)
+        for i in range(len(factorBase)):
+            if factorBase[i] in nFactors:
+                expVector[i] = (expVector[i] + nFactors.count(factorBase[i])) % 2
 
-        for i in range(len(factor_base)):
-            if factor_base[i] in n_factors:
-                exp_vector[i] = (exp_vector[i] + n_factors.count(factor_base[i])) % 2
-
-        if 1 not in exp_vector: #search for squares
+        #procura por quadrados
+        if 1 not in expVector:
             return True, n
         else:
             pass
         
-        M.append(exp_vector)  
+        M.append(expVector)  
 
     return(False, transpose(M))
 
-def find_smooth(factor_base, N, I, T, xZero):
-# tries to find B-smooth numbers in sieve_seq, using sieving
+#função que encontra os números B-smooth usando o método do crivo
+def findSmooth(factorBase, N, I, T, xZero):
+    #gera o valor da função Q(x) = x^2 - N, começando em x = xZero
+    def sievePrep(N, sieveInt, xZero):
+        sieveSeq = [x**2 - N for x in range(xZero, xZero+sieveInt)]
+        return sieveSeq
 
-    def sieve_prep(N,sieve_int, xZero):
-    # generates a sequence from Y(x) = x^2 - N, starting at x = root 
-        sieve_seq = [x**2 - N for x in range(xZero,xZero+sieve_int)]
-        #sieve_seq_neg = [x**2 - N for x in range(xZero,xZero-sieve_int,-1)]
-        return sieve_seq
-
-    sieve_seq = sieve_prep(N, I, xZero)
-    sieve_list = sieve_seq.copy() # keep a copy of sieve_seq for later
-    if factor_base[0] == 2:
+    sieveSeq = sievePrep(N, I, xZero)
+    sieveList = sieveSeq.copy()
+    if factorBase[0] == 2:
         i = 0
-        while sieve_list[i] % 2 != 0:
+        while sieveList[i] % 2 != 0:
             i += 1
-        for j in range(i,len(sieve_list),2): # found the 1st even term, now every other term will also be even
-            while sieve_list[j] % 2 == 0: #account for powers of 2
-                sieve_list[j] //= 2
+        #encontrei o 1º termo par, agora todos os outros também serão
+        for j in range(i, len(sieveList), 2):
+            while sieveList[j] % 2 == 0:
+                sieveList[j] //= 2
 
-    for p in factor_base[1:]: #not including 2
-        residues = tonelliShanks(N,p) #finds x such that x^2 = n (mod p). There are two start solutions
-        
+    for p in factorBase[1:]:
+        #encontro x tal que x^2 = n mod p com o algoritmo de Tonelli-Shanks
+        residues = tonelliShanks(N, p) 
         for r in residues:
-            for i in range((r-xZero) % p, len(sieve_list), p): # Now every pth term will also be divisible
-                while sieve_list[i] % p == 0: #account for prime powers
-                    sieve_list[i] //= p
-    xlist = [] #original x terms
-    smooth_nums = []
-    indices = [] # index of discovery
+            for i in range((r - xZero) % p, len(sieveList), p):
+                while sieveList[i] % p == 0:
+                    sieveList[i] //= p
+    xlistOriginal = []
+    smoothNums = []
+    indexes = []
     
-    for i in range(len(sieve_list)):
-        if len(smooth_nums) >= len(factor_base) + T: #probability of no solutions is 2^-T
+    # dada a lista de candidatos, determina os números B-smooth e os valores para X associados
+    for i in range(len(sieveList)):
+        if len(smoothNums) >= len(factorBase) + T:
             break
-        if sieve_list[i] == 1: # found B-smooth number
-            smooth_nums.append(sieve_seq[i])
-            xlist.append(i+xZero)
-            indices.append(i)
+        if sieveList[i] == 1: # found B-smooth number
+            smoothNums.append(sieveSeq[i])
+            xlistOriginal.append(i + xZero)
+            indexes.append(i)
 
-    return(smooth_nums,xlist,indices)
+    return(smoothNums, xlistOriginal, indexes)
 
 #função para gerar o B heurístico e os fatores primos com base nesse
 def generateFactorBase(N):
     B = exp(0.5 * sqrt(log(N) * log(log(N))))
     B = int(B)
-    
-    factor_base = []
+    factorBase = []
     for p in range(2, B + 1):
         if isprime(p) and pow(N, (p - 1) // 2, p) == 1:
-            factor_base.append(p)
+            factorBase.append(p)
     
-    return factor_base, B
+    return factorBase, B
 
 #função que recebe um valor de B e gera os fatores primos com base nele
 def generateFactorBaseWithB(N, B):
-    factor_base = []
+    factorBase = []
     for p in range(2, B + 1):
         if isprime(p) and pow(N, (p - 1) // 2, p) == 1:
-            factor_base.append(p)
+            factorBase.append(p)
     
-    return factor_base, B
+    return factorBase, B
 
 #função para leitura do arquivo de entrada
 def lerEntradaArquivo(caminho_arquivo):
     with open(caminho_arquivo, 'r') as file:
-        numero = int(file.readline().strip())
-    return numero
+        num = int(file.readline().strip())
+    return num
 
 #função principal para cálculo do crivo quadrático
 def quadraticSieve(crivoIntervalMultiplicator, primeList, T, xZero):
-    while(crivoIntervalMultiplicator <= 1000000):
+    while(crivoIntervalMultiplicator <= 10000000):
         #encontrando os números B-smooth usando o método de sieve
-        smooth_nums, xlist, indices = find_smooth(primeList, N, 10*crivoIntervalMultiplicator, T, xZero)
+        smoothNums, xlist, indexes = findSmooth(primeList, N, crivoIntervalMultiplicator, T, xZero)
         crivoIntervalMultiplicator = crivoIntervalMultiplicator * 10
 
         #Verifica se foram encontrados números smooth suficientes
-        if len(smooth_nums) < len(primeList):
+        if len(smoothNums) < len(primeList):
             continue
 
         #montagem da matriz de expoentes
-        is_square, t_matrix = build_matrix(smooth_nums,primeList)
+        isSquare, expMatrix = buildMatrix(smoothNums, primeList)
 
         #caso já tenha um quadrado imediato
-        if is_square == True:
-            x = smooth_nums.index(t_matrix)
-            factor = gcd(xlist[x]+sqrt(t_matrix),N)
+        if isSquare == True:
+            x = smoothNums.index(expMatrix)
+            factor = gcd(xlist[x]+sqrt(expMatrix),N)
             print("X =", xlist[x])
-            print("Y =", sqrt(t_matrix))
+            print("Y =", sqrt(expMatrix))
             print("Fator 1:", factor)
-            print("Fator 2:", int(N/factor))
+            print("Fator 2:", int(N / factor))
             return True
 
         #caso não, resolvo sol*matrix = 0 e testo todas as possíveis respostas
         else:
-            sol_rows, marks, M = gauss_elim(t_matrix)
-            solution_vec = solve_row(sol_rows,M,marks,0)
-            factor, x, y = solve(solution_vec,smooth_nums,xlist,N)
+            solRows, marks, M = gaussElim(expMatrix)
+            solutionVec = solveRow(solRows, M, marks, 0)
+            factor, x, y = solve(solutionVec, smoothNums, xlist, N)
 
             #testo para todos os vetores solução até achar um que me dá a fatoração não trivial
-            for K in range(1, len(sol_rows)):
+            for K in range(1, len(solRows)):
                 if (factor == 1 or factor == N):
-                    solution_vec = solve_row(sol_rows,M,marks,K)
-                    factor, x, y = solve(solution_vec,smooth_nums,xlist,N)
+                    solutionVec = solveRow(solRows, M, marks, K)
+                    factor, x, y = solve(solutionVec, smoothNums, xlist, N)
                 else:
                     print("X =", x)
                     print("Y =", y)
                     print("Fator 1:", factor)
-                    print("Fator 2:", int(N/factor))
+                    print("Fator 2:", int(N / factor))
                     return True
-
-        print("Não foi possível encontrar fatores não triviais!")
-    
+                
     return False
 
 #leitura da entrada
@@ -322,7 +314,7 @@ if isPrime:
 primeList, B = generateFactorBase(n)
 print("Limite Superior para os primos usados no crivo: ", B)
 print("A quantidade de primos que podem aparecer na fatoração após aplicação da heurística é: ", len(primeList))
-print("O tamanho dos vetores incluídos na matriz é: ", len(primeList)+1)
+print("O tamanho dos vetores incluídos na matriz é: ", len(primeList) + 1)
 
 global N
 N = n
@@ -339,7 +331,7 @@ while resp == 0:
     primeList, B = generateFactorBaseWithB(n, B)
     print("Limite Superior para os primos usados no crivo: ", B)
     print("A quantidade de primos que podem aparecer na fatoração após aplicação da heurística é: ", len(primeList))
-    print("O tamanho dos vetores incluídos na matriz é: ", len(primeList)+1)
+    print("O tamanho dos vetores incluídos na matriz é: ", len(primeList) + 1)
     sieveIntervalMultiplicator = 10
     resp = quadraticSieve(sieveIntervalMultiplicator, primeList, T, xZero)
     if resp: break
