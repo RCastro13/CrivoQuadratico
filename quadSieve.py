@@ -13,41 +13,42 @@ def gcd(a, b):
 
 #função para verificar se 'a' é um resíduo quadrado de n
 def quadResidue(a, n):
-    l = 1
-    q = (n-1)//2
-    x = q**l
-    if x == 0:
+    exponent = 1
+    halfNMinus1 = (n-1)//2
+    power = halfNMinus1**exponent
+
+    if power == 0:
         return 1
         
-    a = a % n
-    z = 1
-    while x != 0:
-        if x % 2 == 0:
-            a = (a**2) % n
-            x //= 2
+    base = a % n
+    result = 1
+    while power != 0:
+        if power % 2 == 0:
+            base = (base**2) % n
+            power //= 2
         else:
-            x -= 1
-            z = (z*a) % n
+            power -= 1
+            result = (result * base) % n
 
-    return z
+    return result
 
 #função que retorna k tal que b^k = 1 mod p
-def order(p, q):
-	if gcd(p, q) != 1:
-		return -1
-	k = 3
-	while True:
-		if pow(q, k, p) == 1:
-			return k
-		k += 1
+def order(modulus, base):
+    if gcd(modulus, base) != 1:
+        return -1
+    exponent = 3
+    while True:
+        if pow(base, exponent, modulus) == 1:
+            return exponent
+        exponent += 1
 
 #função que p-1 (= x de parâmetro) tal que x*2^e onde x é par 
-def convertx2e(x):
-	e = 0
-	while x % 2 == 0:
-		x /= 2
-		e += 1
-	return int(x), e
+def convertx2e(value):
+    exponentOfTwo = 0
+    while value % 2 == 0:
+        value //= 2
+        exponentOfTwo += 1
+    return int(value), exponentOfTwo
 
 #função principal que aplica o algoritmo de tonelli-shanks para resolver x^2 = N mod p
 def tonelliShanks(n, p):
